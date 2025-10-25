@@ -1,0 +1,38 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: BuildAndTestCSharp
+  displayName: 'Build and Test C# Project'
+  jobs:
+  - job: CSharp
+    displayName: 'Run C# Tests'
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '8.x'
+      displayName: 'Install .NET 8 SDK'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'test'
+        projects: '**/*.csproj'
+        arguments: '/p:CollectCoverage=true'
+      displayName: 'Run C# Tests with Coverage'
+
+- stage: PublishMetrics
+  displayName: 'Publish Code Coverage'
+  dependsOn: BuildAndTestCSharp
+  jobs:
+  - job: Metrics
+    displayName: 'Publish Coverage Metrics'
+    steps:
+    - task: PublishCodeCoverageResults@1
+      inputs:
+        codeCoverageTool: 'cobertura'
+        summaryFileLocation: '**/*coverage.xml'
+      displayName: 'Publish Code Coverage Results'
